@@ -4,6 +4,7 @@ import { ChevronRight, Trophy, Flag, Timer, Map as MapIcon, Calendar, Activity }
 import { Link } from 'react-router-dom';
 import { getDriverStandings, getConstructorStandings, getSchedule, getLatestNews, type Standing, type NewsItem } from '@/api';
 import { getCircuitImageUrl } from '@/utils/circuitImages';
+import { formatToEST } from '@/utils/dateUtils';
 
 // Lazy load the 3D scene to avoid initial load block
 const Scene = lazy(() => import('@/components/3d/Scene'));
@@ -85,7 +86,7 @@ export default function Home() {
                                 </span>
                                 <span className="flex items-center gap-1.5 text-gray-300 font-medium">
                                     <Timer size={16} className="text-f1-red" />
-                                    {nextRace ? nextRace.time.slice(0, 5) : '--:--'} GMT
+                                    {nextRace ? formatToEST(nextRace.date, nextRace.time) : '--:--'} EST
                                 </span>
                                 <span className="flex items-center gap-1.5 text-gray-300 font-medium">
                                     <MapIcon size={16} className="text-f1-red" />

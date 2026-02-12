@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { getSchedule } from '@/api';
-import { MapPin, Calendar } from 'lucide-react';
+import { MapPin, Calendar, Clock } from 'lucide-react';
+import { formatToEST } from '@/utils/dateUtils';
 
 export default function Schedule() {
     const [races, setRaces] = useState<any[]>([]);
@@ -66,6 +67,10 @@ export default function Schedule() {
                                 <div className="flex items-center gap-2">
                                     <MapPin size={14} />
                                     <span>{race.Circuit.circuitName}, {race.Circuit.Location.locality}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Clock size={14} />
+                                    <span>{formatToEST(race.date, race.time)} EST</span>
                                 </div>
                             </div>
 
