@@ -5,14 +5,16 @@ import { getDriverStandings, getConstructorStandings, type Standing } from '@/ap
 export default function Rankings() {
     const [driverStandings, setDriverStandings] = useState<Standing[]>([]);
     const [constructorStandings, setConstructorStandings] = useState<any[]>([]);
+    const [season, setSeason] = useState<number>(new Date().getFullYear());
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         async function loadData() {
-            const drivers = await getDriverStandings();
-            const constructors = await getConstructorStandings();
+            const { standings: drivers, season: driverSeason } = await getDriverStandings();
+            const { standings: constructors } = await getConstructorStandings();
             setDriverStandings(drivers);
             setConstructorStandings(constructors);
+            setSeason(driverSeason);
             setLoading(false);
         }
         loadData();
@@ -24,8 +26,11 @@ export default function Rankings() {
         <div className="space-y-12">
             <header className="mb-8">
                 <h1 className="text-5xl md:text-7xl font-bold uppercase italic tracking-tighter mb-4">
-                    Standings <span className="text-f1-red">{new Date().getFullYear() - 1}</span>
+                    Standings <span className="text-f1-red">{season}</span>
                 </h1>
+                <p className="text-sm text-gray-500 uppercase tracking-wider font-mono">
+                    {season === new Date().getFullYear() ? 'Live Season — Updates after each race' : `${season} Final Standings`}
+                </p>
             </header>
 
             <div className="grid md:grid-cols-2 gap-12">
@@ -41,11 +46,10 @@ export default function Rankings() {
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.05 }}
-                                className="group relative flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-[1.02] transition-all duration-300"
+                                className={`group relative flex items-center justify-between p-4 rounded-2xl border border-white/10 hover:bg-white/10 hover:scale-[1.02] transition-all duration-300 ${index === 0 ? 'bg-f1-red/10 border-f1-red/30' : 'bg-white/5'}`}
                             >
                                 <div className="flex items-center gap-4">
-                                    <span className="font-mono text-3xl font-bold text-gray-500 w-8">{standing.position}</span>
-                                    {/* Used placeholder for image as standings API doesn't have it, or could map from driver list */}
+                                    <span className={`font-mono text-3xl font-bold w-8 ${index === 0 ? 'text-f1-red' : 'text-gray-500'}`}>{standing.position}</span>
                                     <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center border-2 border-white/10 text-xs font-bold text-gray-400">
                                         {standing.Driver.code}
                                     </div>
@@ -75,10 +79,10 @@ export default function Rankings() {
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.05 }}
-                                className="group flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-[1.02] transition-all duration-300"
+                                className={`group flex items-center justify-between p-4 rounded-2xl border border-white/10 hover:bg-white/10 hover:scale-[1.02] transition-all duration-300 ${index === 0 ? 'bg-blue-500/10 border-blue-500/30' : 'bg-white/5'}`}
                             >
                                 <div className="flex items-center gap-4">
-                                    <span className="font-mono text-3xl font-bold text-gray-500 w-8">{team.position}</span>
+                                    <span className={`font-mono text-3xl font-bold w-8 ${index === 0 ? 'text-blue-400' : 'text-gray-500'}`}>{team.position}</span>
                                     <div className="w-2 h-8 rounded-full bg-white/20" />
                                     <div>
                                         <h3 className="font-bold text-xl uppercase tracking-tighter">{team.Constructor.name}</h3>

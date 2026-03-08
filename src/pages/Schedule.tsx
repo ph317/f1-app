@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { getSchedule } from '@/api';
-import { MapPin, Calendar, Clock } from 'lucide-react';
+import { getSchedule, getRaceResults } from '@/api';
+import { MapPin, Calendar, Clock, Trophy } from 'lucide-react';
 import { formatToEST } from '@/utils/dateUtils';
 
 export default function Schedule() {
     const [races, setRaces] = useState<any[]>([]);
+    const [winners, setWinners] = useState<Record<number, string>>({});
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -13,6 +14,28 @@ export default function Schedule() {
             const data = await getSchedule();
             setRaces(data);
             setLoading(false);
+
+            // Fetch winners for all completed races concurrently
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const completedRaces = data.filter((race: any) => {
+                const raceDateOnly = new Date(race.date);
+                raceDateOnly.setHours(0, 0, 0, 0);
+                return raceDateOnly < today;
+            });
+
+            const results = await Promise.all(
+                completedRaces.map((race: any) => getRaceResults(Number(race.round)))
+            );
+
+            const winnerMap: Record<number, string> = {};
+            completedRaces.forEach((race: any, index: number) => {
+                const top = results[index]?.[0];
+                if (top) {
+                    winnerMap[race.round] = `${top.Driver.givenName} ${top.Driver.familyName}`;
+                }
+            });
+            setWinners(winnerMap);
         }
         load();
     }, []);
@@ -35,6 +58,7 @@ export default function Schedule() {
                     const raceDateOnly = new Date(raceDate);
                     raceDateOnly.setHours(0, 0, 0, 0);
                     const isCompleted = raceDateOnly < today;
+                    const winner = winners[race.round];
 
                     return (
                         <motion.div
@@ -75,9 +99,14 @@ export default function Schedule() {
                             </div>
 
                             <div className="pt-4 border-t border-white/10 flex justify-between items-center">
-                                <div className="text-xs text-gray-500 uppercase">Winner</div>
-                                <div className="font-bold">
-                                    {isCompleted ? "TBD" : "—"}
+                                <div className="flex items-center gap-1.5 text-xs text-gray-500 uppercase">
+                                    <Trophy size={12} />
+                                    <span>Winner</span>
+                                </div>
+                                <div className="font-bold text-sm">
+                                    {isCompleted
+                                        ? (winner || <span className="text-gray-500 text-xs">TBD</span>)
+                                        : '—'}
                                 </div>
                             </div>
                         </motion.div>

@@ -88,26 +88,56 @@ export async function getDrivers(): Promise<Driver[]> {
     }
 }
 
-// Fetch previous year's final standings (for displaying last season's champions)
-export async function getDriverStandings(): Promise<Standing[]> {
+// Returns { standings, season } - tries current year first, falls back to previous
+export async function getDriverStandings(): Promise<{ standings: Standing[]; season: number }> {
     try {
-        const response = await fetch(`${JOLPICA_API_PREVIOUS}/driverStandings.json`);
-        const data = await response.json();
-        return data.MRData.StandingsTable.StandingsLists[0]?.DriverStandings || [];
+        const responseCurrent = await fetch(`${JOLPICA_API_CURRENT}/driverStandings.json`);
+        const dataCurrent = await responseCurrent.json();
+        const currentStandings = dataCurrent.MRData.StandingsTable.StandingsLists[0]?.DriverStandings || [];
+        if (currentStandings.length > 0) {
+            return { standings: currentStandings, season: CURRENT_YEAR };
+        }
+        const responsePrev = await fetch(`${JOLPICA_API_PREVIOUS}/driverStandings.json`);
+        const dataPrev = await responsePrev.json();
+        return {
+            standings: dataPrev.MRData.StandingsTable.StandingsLists[0]?.DriverStandings || [],
+            season: PREVIOUS_YEAR
+        };
     } catch (error) {
-        console.error("Failed to fetch standings:", error);
-        return [];
+        console.error("Failed to fetch driver standings:", error);
+        return { standings: [], season: PREVIOUS_YEAR };
     }
 }
 
-// Fetch previous year's final constructor standings (for displaying last season's champions)
-export async function getConstructorStandings() {
+// Returns { standings, season } - tries current year first, falls back to previous
+export async function getConstructorStandings(): Promise<{ standings: any[]; season: number }> {
     try {
-        const response = await fetch(`${JOLPICA_API_PREVIOUS}/constructorStandings.json`);
-        const data = await response.json();
-        return data.MRData.StandingsTable.StandingsLists[0]?.ConstructorStandings || [];
+        const responseCurrent = await fetch(`${JOLPICA_API_CURRENT}/constructorStandings.json`);
+        const dataCurrent = await responseCurrent.json();
+        const currentStandings = dataCurrent.MRData.StandingsTable.StandingsLists[0]?.ConstructorStandings || [];
+        if (currentStandings.length > 0) {
+            return { standings: currentStandings, season: CURRENT_YEAR };
+        }
+        const responsePrev = await fetch(`${JOLPICA_API_PREVIOUS}/constructorStandings.json`);
+        const dataPrev = await responsePrev.json();
+        return {
+            standings: dataPrev.MRData.StandingsTable.StandingsLists[0]?.ConstructorStandings || [],
+            season: PREVIOUS_YEAR
+        };
     } catch (error) {
         console.error("Failed to fetch constructor standings:", error);
+        return { standings: [], season: PREVIOUS_YEAR };
+    }
+}
+
+// Fetch race results for a specific round - returns the results array (winner is index 0)
+export async function getRaceResults(round: number): Promise<any[]> {
+    try {
+        const response = await fetch(`${JOLPICA_API_CURRENT}/${round}/results.json`);
+        const data = await response.json();
+        return data.MRData.RaceTable.Races[0]?.Results || [];
+    } catch (error) {
+        console.error(`Failed to fetch results for round ${round}:`, error);
         return [];
     }
 }

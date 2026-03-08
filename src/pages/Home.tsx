@@ -1,6 +1,6 @@
 import { useEffect, useState, Suspense, lazy } from 'react';
 import { BentoGrid, BentoItem } from '@/components/ui/BentoGrid';
-import { ChevronRight, Trophy, Flag, Timer, Map as MapIcon, Calendar, Activity } from 'lucide-react';
+import { ChevronRight, Timer, Map as MapIcon, Calendar, Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getDriverStandings, getConstructorStandings, getSchedule, getLatestNews, type Standing, type NewsItem } from '@/api';
 import { getCircuitImageUrl } from '@/utils/circuitImages';
@@ -12,16 +12,18 @@ const Scene = lazy(() => import('@/components/3d/Scene'));
 export default function Home() {
     const [topDriver, setTopDriver] = useState<Standing | null>(null);
     const [topTeam, setTopTeam] = useState<any | null>(null);
+    const [season, setSeason] = useState<number>(new Date().getFullYear());
     const [nextRace, setNextRace] = useState<any | null>(null);
     const [news, setNews] = useState<NewsItem[]>([]);
     const [isNewsLoading, setIsNewsLoading] = useState(true);
 
     useEffect(() => {
         async function load() {
-            const drivers = await getDriverStandings();
+            const { standings: drivers, season: driverSeason } = await getDriverStandings();
             if (drivers.length > 0) setTopDriver(drivers[0]);
+            setSeason(driverSeason);
 
-            const teams = await getConstructorStandings();
+            const { standings: teams } = await getConstructorStandings();
             if (teams.length > 0) setTopTeam(teams[0]);
 
             const schedule = await getSchedule();
@@ -97,33 +99,35 @@ export default function Home() {
                     </BentoItem>
 
                     {/* Current Leader */}
-                    <BentoItem colSpan={1} className=""> {/* Removed bg-zinc-900 for glass effect */}
-                        <div className="absolute top-0 right-0 p-4 opacity-10">
-                            <Trophy size={80} />
-                        </div>
+                    <BentoItem colSpan={1} className="">
                         <div className="relative z-10 h-full flex flex-col justify-between">
-                            <h3 className="text-xs text-gray-400 uppercase tracking-wider font-bold">World Champion</h3>
+                            <div className="flex justify-between items-start">
+                                <h3 className="text-xs text-gray-400 uppercase tracking-wider font-bold">Drivers Lead <span className="text-f1-red">{season}</span></h3>
+                            </div>
                             <div>
-                                <div className="text-4xl font-bold text-f1-red mb-1">{topDriver ? topDriver.position : '1'}</div>
-                                <p className="text-lg font-bold leading-tight">{topDriver ? `${topDriver.Driver.givenName} ${topDriver.Driver.familyName}` : 'Max Verstappen'}</p>
-                                <p className="text-xs text-gray-500 mt-1">{topDriver ? topDriver.Constructors[0].name : 'Red Bull Racing'}</p>
+                                <div className="text-4xl font-bold text-f1-red mb-1">{topDriver ? topDriver.points : '—'}<span className="text-base text-gray-500 ml-1">PTS</span></div>
+                                <p className="text-lg font-bold leading-tight">{topDriver ? `${topDriver.Driver.givenName} ${topDriver.Driver.familyName}` : '—'}</p>
+                                <div className="w-full bg-gray-700 h-1 mt-2 rounded-full overflow-hidden">
+                                    <div className="bg-f1-red h-full" style={{ width: topDriver ? `${Math.min(100, (Number(topDriver.points) / 50) * 100)}%` : '0%' }} />
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">{topDriver ? topDriver.Constructors[0].name : '—'}</p>
                             </div>
                         </div>
                     </BentoItem>
 
                     {/* Constructor Leader */}
-                    <BentoItem colSpan={1} className=""> {/* Removed bg-zinc-800 for glass effect */}
-                        <div className="h-full flex flex-col justify-between">
+                    <BentoItem colSpan={1} className="">
+                        <div className="relative z-10 h-full flex flex-col justify-between">
                             <div className="flex justify-between items-start">
-                                <h3 className="text-xs text-gray-400 uppercase tracking-wider font-bold">Constructors</h3>
-                                <Flag className="text-f1-red" size={20} />
+                                <h3 className="text-xs text-gray-400 uppercase tracking-wider font-bold">Constructors Lead <span className="text-f1-red">{season}</span></h3>
                             </div>
                             <div>
-                                <h4 className="text-xl font-bold leading-tight">{topTeam ? topTeam.Constructor.name : 'Red Bull'}</h4>
+                                <div className="text-4xl font-bold text-f1-red mb-1">{topTeam ? topTeam.points : '—'}<span className="text-base text-gray-500 ml-1">PTS</span></div>
+                                <p className="text-lg font-bold leading-tight">{topTeam ? topTeam.Constructor.name : '—'}</p>
                                 <div className="w-full bg-gray-700 h-1 mt-2 rounded-full overflow-hidden">
-                                    <div className="bg-f1-red w-[80%] h-full" />
+                                    <div className="bg-f1-red h-full" style={{ width: topTeam ? `${Math.min(100, (Number(topTeam.points) / 100) * 100)}%` : '0%' }} />
                                 </div>
-                                <p className="text-right text-[10px] text-gray-400 mt-1">{topTeam ? `${topTeam.points} PTS` : '450 PTS'}</p>
+                                <p className="text-xs text-gray-500 mt-1">{topTeam ? `${topTeam.wins} WIN${Number(topTeam.wins) !== 1 ? 'S' : ''}` : '—'}</p>
                             </div>
                         </div>
                     </BentoItem>
@@ -169,7 +173,7 @@ export default function Home() {
                                                                 {item.category || 'News'}
                                                             </span>
                                                             <span className="text-[10px] text-gray-500 font-mono">
-                                                                • {new Date(item.pubDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                                • {new Date(item.pubDate).toLocaleString('en-US', { timeZone: 'America/New_York', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })} EST
                                                             </span>
                                                         </div>
                                                         <h4 className="text-sm font-bold leading-tight group-hover/news:text-f1-red transition-colors italic">
